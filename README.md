@@ -10,6 +10,9 @@ Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlayin
 3. Once installed, go to this project's [latest releases](https://github.com/mjdelro/mikey-lyrics/releases)
 4. Install using the .rmskin file
 
+## Support
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S67WS0V)
+
 ## Screenshots
 <p align="center">
   <img src="https://i.imgur.com/v7VexNJ.png" width="300">  
