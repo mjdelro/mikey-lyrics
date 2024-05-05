@@ -6,7 +6,6 @@ Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlayin
 
 ## Screenshots
 <p align="center">
-  <img src="https://i.imgur.com/v7VexNJ.png" width="300"> 
-  <img src="https://i.imgur.com/fGekwgu.png" width="300"> 
+  <img src="https://i.imgur.com/v7VexNJ.png" width="300">  
   <img src="https://i.imgur.com/ACxeZUW.png" width="300"> 
 </p>
