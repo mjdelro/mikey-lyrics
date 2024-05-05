@@ -11,7 +11,7 @@ Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlayin
 4. Install using the .rmskin file
 
 ## Support
-<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Support Me on Ko-fi', '#136131', 'S6S67WS0V');kofiwidget2.draw();</script> 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S67WS0V)
 
 ## Screenshots
 <p align="center">
