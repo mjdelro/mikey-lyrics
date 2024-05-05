@@ -5,5 +5,8 @@ Rainmeter skin that uses lrclib.net and webnowplaying-redux to control mediaplay
 Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlaying) by keifufu and lyrics are provided by [LRCLIB](https://github.com/tranxuanthang/lrclib) by tranxuanthang.
 
 ## Screenshots
-<img src="https://i.imgur.com/v7VexNJ.png" width=50% height=50%>
-
+<p align="center">
+  <img src="https://i.imgur.com/v7VexNJ.png" width="100"> 
+  <img src="https://i.imgur.com/fGekwgu.png" width="100"> 
+  <img src="https://i.imgur.com/ACxeZUW.png" width="100"> 
+</p>
