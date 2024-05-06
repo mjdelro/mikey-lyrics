@@ -1,4 +1,4 @@
-# mikey-lyrics
+![image](https://github.com/mjdelro/mikey-lyrics/assets/15952601/5bd32dde-8403-4ba0-9548-e8a65e4bdce7)# mikey-lyrics
 Rainmeter skin that uses lrclib.net and webnowplaying-redux to control mediaplayers and show lyrics.
 
 ## Attribution
@@ -15,6 +15,8 @@ Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlayin
 
 ## Screenshots
 <p align="center">
+  <img src="https://i.imgur.com/VHqUr9l.png">
+  <\br>
   <img src="https://i.imgur.com/8QfY2ij.png" height="400">  
   <img src="https://i.imgur.com/dVxfL3k.png" height="400"> 
 </p>
