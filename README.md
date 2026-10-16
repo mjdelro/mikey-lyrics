@@ -1,21 +1,22 @@
-# mikey-lyrics
-Rainmeter skin that uses lrclib.net and webnowplaying-redux to control mediaplayers and show lyrics.
+# Mikey Lyrics
 
-## Attribution
-Included are plugins for [WebNowPlaying](https://github.com/keifufu/WebNowPlaying) by keifufu and lyrics are provided by [LRCLIB](https://github.com/tranxuanthang/lrclib) by tranxuanthang.
+A Rainmeter skin that displays lyrics from [LRCLIB](https://github.com/tranxuanthang/lrclib) and uses [WebNowPlaying](https://github.com/keifufu/WebNowPlaying) for media controls.
 
-## Installation Instructions
-1. Go to https://www.rainmeter.net/ or [Rainmeter's repo](https://github.com/rainmeter/rainmeter)
-2. Download and install the latest release of Rainmeter
-3. Once installed, go to this project's [latest releases](https://github.com/mjdelro/mikey-lyrics/releases)
-4. Install using the .rmskin file
+## Install
 
-### Runs natively with [these desktop applications](https://github.com/ModernFlyouts-Community/ModernFlyouts/blob/main/docs/GSMTC-Support-And-Popular-Apps.md).
-*If you would like this to run with browser applications, please follow [keifufu's Browser Extension](https://wnp.keifufu.dev/extension/getting-started) guide.*
+1. Download and install [Rainmeter](https://www.rainmeter.net/).
+2. Download the `.rmskin` file from this project's [latest release](https://github.com/mjdelro/mikey-lyrics/releases/latest).
+3. Open the file with Rainmeter's skin installer.
 
-## Caveats
-LRCLib requires that the Artist Name, Track Name, Album Name and Total Duration are available to identify a song.
-If any of those variables are inaccurate, the lyrics may not be displayed.
+The skin works directly with [supported desktop media players](https://github.com/ModernFlyouts-Community/ModernFlyouts/blob/main/docs/GSMTC-Support-And-Popular-Apps.md). For browser playback, install and configure the [WebNowPlaying browser extension](https://wnp.keifufu.dev/extension/getting-started).
+
+## Matching lyrics
+
+LRCLIB identifies a song from its artist, track, album, and total duration. Lyrics may not appear if the media player reports any of those values incorrectly.
+
+## Credits
+
+The bundled WebNowPlaying plugin is by keifufu. Lyrics are provided by LRCLIB, created by tranxuanthang.
 
 ## Support
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S67WS0V)
