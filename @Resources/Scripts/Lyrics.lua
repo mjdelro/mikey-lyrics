@@ -1,4 +1,4 @@
--- Mikey Lyrics - Synchronous & Plain Lyrics Engine for Rainmeter (Lua 5.1)
+-- mikey lyrics - Synchronous & Plain Lyrics Engine for Rainmeter (Lua 5.1)
 
 local STATE = {
     -- Track metadata tracking & debouncing
@@ -36,7 +36,7 @@ local STATE = {
     maxLyricSize = 24,
     vinylMode = false,
     vinylAngle = 0,
-    vinylStepDeg = 9, -- 9 deg per 200ms tick = ~8s per revolution
+    vinylStepDeg = 4.5, -- 4.5 deg per 100ms tick = ~8s per revolution
 }
 
 local mTitle, mArtist, mAlbum, mDuration, mPosition, mState, mLyricsBody
@@ -449,14 +449,18 @@ local function pickBestSearchResult(results, targetDuration)
                 score = score + 100
             end
 
-            if targetDuration and targetDuration > 0 and type(item.duration) == "number" then
+            if targetDuration and targetDuration > 0 and type(item.duration) == "number" and item.duration > 0 then
                 local diff = math.abs(item.duration - targetDuration)
-                if diff <= 3 then
-                    score = score + 300 - diff * 10
-                elseif diff <= 10 then
-                    score = score + 150 - diff * 5
+                if diff <= 1.5 then
+                    score = score + 550 - diff * 20
+                elseif diff <= 3 then
+                    score = score + 380 - diff * 25
+                elseif diff <= 6 then
+                    score = score + 180 - diff * 20
+                elseif diff <= 12 then
+                    score = score + 40 - diff * 10
                 else
-                    score = score - diff * 2
+                    score = score - (100 + diff * 4)
                 end
             end
 

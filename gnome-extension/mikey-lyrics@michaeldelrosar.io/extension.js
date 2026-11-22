@@ -76,8 +76,10 @@ export default class MikeyLyricsExtension extends Extension {
             this
         );
 
-        // 200ms sync loop (5 Hz) for snappy synchronous lyrics + progress bar
-        this._tickTimerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
+        // 50ms sync loop (20 Hz) for high-precision synchronous lyrics (±25ms)
+        this._lastTimeText = '';
+        this._lastFillWidth = -1;
+        this._tickTimerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
             this._onTick();
             return GLib.SOURCE_CONTINUE;
         });
@@ -140,10 +142,19 @@ export default class MikeyLyricsExtension extends Extension {
             track_hover: true,
         });
 
-        // Allow dragging from root background or toolbar
+        // Allow dragging from non-interactive areas only (never intercept St.Button / cover / progress bar)
         this._root.connect('button-press-event', (_actor, event) => {
             if (event.get_button() !== 1 || this._settings.get_boolean('lock-position'))
                 return Clutter.EVENT_PROPAGATE;
+            let src = event.get_source();
+            while (src && src !== this._root) {
+                if (src instanceof St.Button ||
+                    src === this._coverFrame ||
+                    src === this._progressTrack ||
+                    src instanceof St.ScrollBar)
+                    return Clutter.EVENT_PROPAGATE;
+                src = src.get_parent();
+            }
             this._startDrag(event);
             return Clutter.EVENT_STOP;
         });
@@ -463,7 +474,7 @@ export default class MikeyLyricsExtension extends Extension {
         if (!this._settings.get_boolean('show-panel-indicator'))
             return;
 
-        this._indicator = new PanelMenu.Button(0.0, 'Mikey Lyrics', false);
+        this._indicator = new PanelMenu.Button(0.0, 'mikey lyrics', false);
         this._indicator.add_child(new St.Icon({
             icon_name: 'audio-x-generic-symbolic',
             style_class: 'system-status-icon',
@@ -522,17 +533,27 @@ export default class MikeyLyricsExtension extends Extension {
         const opacity = this._settings.get_int('background-opacity');
         const alpha = (Math.max(0, Math.min(255, opacity)) / 255).toFixed(3);
         const accent = this._settings.get_string('accent-color') || '#1e824c';
+        const activeColor = this._settings.get_string('active-lyric-color') || 'rgba(255,255,255,1)';
+        const lyricColor = this._settings.get_string('lyric-color') || 'rgba(255,255,255,0.48)';
+        const fontFamily = (this._settings.get_string('font-family') || '').trim();
+        const borderRadius = this._settings.get_int('border-radius');
         const fontSize = this._settings.get_int('font-size');
 
+        const fontCss = fontFamily
+            ? `font-family: "${fontFamily.replace(/"/g, '')}"; `
+            : '';
+
         this._root.width = width;
-        this._root.set_style(`background-color: rgba(0, 0, 0, ${alpha});`);
+        this._root.set_style(
+            `${fontCss}background-color: rgba(0, 0, 0, ${alpha}); border-radius: ${borderRadius}px;`
+        );
         this._lyricsArea.height = lyricsHeight;
         this._progressFill.set_style(`background-color: ${accent};`);
 
-        this._plainLabel.set_style(`font-size: ${fontSize}px;`);
-        this._prevLabel.set_style(`font-size: ${fontSize}px;`);
-        this._nextLabel.set_style(`font-size: ${fontSize}px;`);
-        this._currentLabel.set_style(`font-size: ${fontSize + 3}px;`);
+        this._plainLabel.set_style(`${fontCss}font-size: ${fontSize}px; color: ${lyricColor};`);
+        this._prevLabel.set_style(`${fontCss}font-size: ${fontSize}px; color: ${lyricColor};`);
+        this._nextLabel.set_style(`${fontCss}font-size: ${fontSize}px; color: ${lyricColor};`);
+        this._currentLabel.set_style(`${fontCss}font-size: ${fontSize + 3}px; color: ${activeColor};`);
 
         this._updateSyncButtonStyle();
         this._applyVinylMode();
@@ -602,6 +623,10 @@ export default class MikeyLyricsExtension extends Extension {
         case 'lyrics-height':
         case 'background-opacity':
         case 'accent-color':
+        case 'active-lyric-color':
+        case 'lyric-color':
+        case 'font-family':
+        case 'border-radius':
         case 'font-size':
             this._applyVisualSettings();
             break;
@@ -762,13 +787,20 @@ export default class MikeyLyricsExtension extends Extension {
     }
 
     _updateProgressUI(state) {
-        this._timeLabel.text = `${formatTime(state.position)} / ${formatTime(state.duration)}`;
+        const nextTime = `${formatTime(state.position)} / ${formatTime(state.duration)}`;
+        if (nextTime !== this._lastTimeText) {
+            this._lastTimeText = nextTime;
+            this._timeLabel.text = nextTime;
+        }
         const trackW = this._progressTrack.width;
+        let nextFill = 0;
         if (trackW > 0 && state.duration > 0) {
             const ratio = Math.max(0, Math.min(1, state.position / state.duration));
-            this._progressFill.width = Math.round(trackW * ratio);
-        } else {
-            this._progressFill.width = 0;
+            nextFill = Math.round(trackW * ratio);
+        }
+        if (nextFill !== this._lastFillWidth) {
+            this._lastFillWidth = nextFill;
+            this._progressFill.width = nextFill;
         }
     }
 
@@ -911,7 +943,7 @@ export default class MikeyLyricsExtension extends Extension {
         if (!state.hasPlayer)
             return;
 
-        // Periodically resync authoritative position from player every ~2s while playing
+        // Poll player position every 500ms (10 ticks @ 50ms) to phase-lock with quantized clocks
         if (state.status === 'Playing') {
             this._posSyncCounter = (this._posSyncCounter + 1) % 10;
             if (this._posSyncCounter === 0)

@@ -101,7 +101,9 @@ export class MprisController {
                 const player = this._findPlayerBySender(sender);
                 if (!player)
                     return;
-                player.position = Math.max(0, Number(posMicros) / 1_000_000);
+                const posSec = Math.max(0, Number(posMicros) / 1_000_000);
+                player.lastRawPos = posSec;
+                player.position = posSec;
                 player.posTimestamp = GLib.get_monotonic_time();
                 if (player.busName === this._activeBusName)
                     this._emitChange(false);
@@ -146,7 +148,9 @@ export class MprisController {
             busName,
             owner: null,
             status: 'Stopped',
+            rate: 1.0,
             metadata: unpackMetadata(null),
+            lastRawPos: -1,
             position: 0,
             posTimestamp: GLib.get_monotonic_time(),
         };
@@ -217,10 +221,17 @@ export class MprisController {
                     const [props] = conn.call_finish(res).deepUnpack();
                     if (props.PlaybackStatus)
                         player.status = props.PlaybackStatus.deepUnpack();
+                    if (props.Rate) {
+                        const r = Number(props.Rate.deepUnpack());
+                        if (r > 0)
+                            player.rate = r;
+                    }
                     if (props.Metadata)
                         player.metadata = unpackMetadata(props.Metadata.deepUnpack());
                     if (props.Position) {
-                        player.position = Math.max(0, Number(props.Position.deepUnpack()) / 1_000_000);
+                        const posSec = Math.max(0, Number(props.Position.deepUnpack()) / 1_000_000);
+                        player.lastRawPos = posSec;
+                        player.position = posSec;
                         player.posTimestamp = GLib.get_monotonic_time();
                     }
                     this._selectBestPlayer();
@@ -240,7 +251,12 @@ export class MprisController {
         let trackChanged = false;
         if (changed.PlaybackStatus) {
             player.status = changed.PlaybackStatus.deepUnpack();
-            this.refreshPosition(player.busName);
+            this.refreshPosition(player.busName, true);
+        }
+        if (changed.Rate) {
+            const r = Number(changed.Rate.deepUnpack());
+            if (r > 0)
+                player.rate = r;
         }
         if (changed.Metadata) {
             const nextMeta = unpackMetadata(changed.Metadata.deepUnpack());
@@ -248,11 +264,12 @@ export class MprisController {
                 nextMeta.artist !== player.metadata.artist ||
                 nextMeta.album !== player.metadata.album) {
                 trackChanged = true;
+                player.lastRawPos = -1;
                 player.position = 0;
                 player.posTimestamp = GLib.get_monotonic_time();
             }
             player.metadata = nextMeta;
-            this.refreshPosition(player.busName);
+            this.refreshPosition(player.busName, true);
         }
 
         const prevActive = this._activeBusName;
@@ -294,7 +311,7 @@ export class MprisController {
         this._activeBusName = best ? best.busName : null;
     }
 
-    refreshPosition(busName = this._activeBusName) {
+    refreshPosition(busName = this._activeBusName, forceSnap = false) {
         if (!busName || this._destroyed)
             return;
         const player = this._players.get(busName);
@@ -316,9 +333,16 @@ export class MprisController {
                     return;
                 try {
                     const [variant] = conn.call_finish(res).deepUnpack();
-                    const posMicros = Number(variant.deepUnpack());
-                    player.position = Math.max(0, posMicros / 1_000_000);
-                    player.posTimestamp = GLib.get_monotonic_time();
+                    const posSec = Math.max(0, Number(variant.deepUnpack()) / 1_000_000);
+                    const now = GLib.get_monotonic_time();
+
+                    // Avoid snapping backwards when a player reports quantized/unchanged seconds while playing
+                    if (!forceSnap && player.status === 'Playing' && posSec === player.lastRawPos)
+                        return;
+
+                    player.lastRawPos = posSec;
+                    player.position = posSec;
+                    player.posTimestamp = now;
                 } catch (_e) {
                     // Some players do not expose Position
                 }
@@ -346,7 +370,7 @@ export class MprisController {
         if (player.status === 'Playing') {
             const elapsedSec = (GLib.get_monotonic_time() - player.posTimestamp) / 1_000_000;
             if (elapsedSec > 0)
-                pos += elapsedSec;
+                pos += elapsedSec * (player.rate || 1.0);
         }
         if (player.metadata.duration > 0)
             pos = Math.min(pos, player.metadata.duration);
@@ -362,8 +386,9 @@ export class MprisController {
     _callMethod(method, params = null) {
         if (!this._activeBusName || this._destroyed)
             return;
+        const targetBus = this._activeBusName;
         this._bus.call(
-            this._activeBusName,
+            targetBus,
             MPRIS_PATH,
             MPRIS_PLAYER_IFACE,
             method,
@@ -372,7 +397,13 @@ export class MprisController {
             Gio.DBusCallFlags.NONE,
             -1,
             null,
-            () => {}
+            (conn, res) => {
+                try {
+                    conn.call_finish(res);
+                } catch (_e) {
+                    // Ignore unsupported method errors
+                }
+            }
         );
     }
 

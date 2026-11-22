@@ -1,4 +1,4 @@
-# Mikey Lyrics
+# mikey lyrics
 
 A desktop lyrics widget for **Rainmeter (Windows)** and **GNOME Shell (Linux)** that displays synchronous (time-synced) and plain lyrics from [LRCLIB](https://github.com/tranxuanthang/lrclib) with media controls.
 

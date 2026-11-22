@@ -27,7 +27,24 @@
     </key>
     <key name="accent-color" type="s">
       <default>'#1e824c'</default>
-      <summary>Progress bar accent color (hex)</summary>
+      <summary>Progress bar accent color</summary>
+    </key>
+    <key name="active-lyric-color" type="s">
+      <default>'rgba(255,255,255,1)'</default>
+      <summary>Active synced lyric color</summary>
+    </key>
+    <key name="lyric-color" type="s">
+      <default>'rgba(255,255,255,0.48)'</default>
+      <summary>Inactive / plain lyric color</summary>
+    </key>
+    <key name="font-family" type="s">
+      <default>''</default>
+      <summary>Custom font family for lyrics and player text</summary>
+    </key>
+    <key name="border-radius" type="i">
+      <default>14</default>
+      <range min="0" max="32"/>
+      <summary>Widget corner radius in pixels</summary>
     </key>
     <key name="font-size" type="i">
       <default>13</default>

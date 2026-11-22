@@ -2,7 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 
-const USER_AGENT = 'mikey-lyrics-gnome/1.1.1 (https://github.com/mjdelro/mikey-lyrics)';
+const USER_AGENT = 'mikey-lyrics-gnome/1.1.2 (https://github.com/mjdelro/mikey-lyrics)';
 
 /**
  * Parse LRC formatted text into a sorted array of { time, text } objects.
@@ -65,12 +65,48 @@ export function findActiveLineIndex(lines, posSec) {
     return result;
 }
 
+const VARIANT_KEYWORDS = [
+    'live',
+    'acoustic',
+    'remix',
+    'karaoke',
+    'sped up',
+    'slowed',
+    'nightcore',
+    'instrumental',
+    'demo',
+    'radio edit',
+];
+
+function normalizeText(str) {
+    return (str || '')
+        .toLowerCase()
+        .replace(/[\u2018\u2019'`]/g, "'")
+        .replace(/[^a-z0-9\s']/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+export function cleanTrackTitle(title) {
+    if (!title)
+        return '';
+    return title
+        .replace(/\s*[\(\[](?:remaster(?:ed)?|official\s*(?:music\s*)?video|official\s*audio|lyric\s*video|explicit|clean|album\s*version|single\s*version|deluxe(?:\s*edition)?|feat\.?[^\)\]]*|ft\.?[^\)\]]*|\d{4}\s*remaster(?:ed)?)[\)\]]/gi, '')
+        .replace(/\s*-\s*(?:remaster(?:ed)?(?:\s*\d{4})?|single|explicit|clean)\s*$/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 /**
  * Choose the best matching LRCLIB record from /api/search results.
  */
-export function pickBestSearchResult(results, targetDuration) {
+export function pickBestSearchResult(results, targetDuration, targetTitle = '', targetArtist = '') {
     if (!Array.isArray(results) || results.length === 0)
         return null;
+
+    const normTargetTitle = normalizeText(targetTitle);
+    const normCleanTitle = normalizeText(cleanTrackTitle(targetTitle));
+    const normTargetArtist = normalizeText(targetArtist);
 
     let bestItem = null;
     let bestScore = -1e9;
@@ -91,14 +127,43 @@ export function pickBestSearchResult(results, targetDuration) {
         else if (item.instrumental)
             score += 100;
 
-        if (targetDuration > 0 && typeof item.duration === 'number') {
+        // Duration accuracy is critical for synced lyrics alignment
+        if (targetDuration > 0 && typeof item.duration === 'number' && item.duration > 0) {
             const diff = Math.abs(item.duration - targetDuration);
-            if (diff <= 3)
-                score += 300 - diff * 10;
-            else if (diff <= 10)
-                score += 150 - diff * 5;
+            if (diff <= 1.5)
+                score += 550 - diff * 20;
+            else if (diff <= 3.0)
+                score += 380 - diff * 25;
+            else if (diff <= 6.0)
+                score += 180 - diff * 20;
+            else if (diff <= 12.0)
+                score += 40 - diff * 10;
             else
-                score -= diff * 2;
+                score -= 100 + diff * 4;
+        }
+
+        // Track & artist text similarity
+        const itemTitle = normalizeText(item.trackName || item.name || '');
+        const itemArtist = normalizeText(item.artistName || '');
+        if (normTargetTitle && itemTitle) {
+            if (itemTitle === normTargetTitle || itemTitle === normCleanTitle)
+                score += 350;
+            else if (itemTitle.includes(normCleanTitle) || normCleanTitle.includes(itemTitle))
+                score += 150;
+        }
+        if (normTargetArtist && itemArtist) {
+            if (itemArtist === normTargetArtist)
+                score += 250;
+            else if (itemArtist.includes(normTargetArtist) || normTargetArtist.includes(itemArtist))
+                score += 120;
+        }
+
+        // Penalize unintended live/remix/acoustic/karaoke variants
+        for (const kw of VARIANT_KEYWORDS) {
+            const wantedInQuery = normTargetTitle.includes(kw);
+            const presentInCandidate = itemTitle.includes(kw);
+            if (presentInCandidate && !wantedInQuery)
+                score -= 260;
         }
 
         score -= i * 0.1;
@@ -217,7 +282,20 @@ export async function fetchLyrics(session, track, cancellable) {
         `artist_name=${encodeURIComponent(artist)}`,
     ];
     const searchUrl = `https://lrclib.net/api/search?${searchParams.join('&')}`;
-    const searchData = await fetchJSON(session, searchUrl, cancellable);
-    const best = pickBestSearchResult(searchData, duration);
+    let searchData = await fetchJSON(session, searchUrl, cancellable);
+    let best = pickBestSearchResult(searchData, duration, title, artist);
+
+    // Retry with cleaned title if noisy tags (Remastered, Official Video, etc.) missed
+    const cleaned = cleanTrackTitle(title);
+    if (!best && cleaned && cleaned.toLowerCase() !== title.toLowerCase()) {
+        const cleanParams = [
+            `track_name=${encodeURIComponent(cleaned)}`,
+            `artist_name=${encodeURIComponent(artist)}`,
+        ];
+        const cleanUrl = `https://lrclib.net/api/search?${cleanParams.join('&')}`;
+        searchData = await fetchJSON(session, cleanUrl, cancellable);
+        best = pickBestSearchResult(searchData, duration, cleaned, artist);
+    }
+
     return normalizeRecord(best);
 }
