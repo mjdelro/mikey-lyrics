@@ -34,9 +34,13 @@ local STATE = {
     lyricStep = 1,
     minLyricSize = 8,
     maxLyricSize = 24,
+    vinylMode = false,
+    vinylAngle = 0,
+    vinylStepDeg = 9, -- 9 deg per 200ms tick = ~8s per revolution
 }
 
 local mTitle, mArtist, mAlbum, mDuration, mPosition, mState, mLyricsBody
+local applyVinylMode
 
 -- ==========================================
 -- Utility: URL Encoding (RFC 3986)
@@ -535,8 +539,10 @@ function Initialize()
     STATE.scrollStep = tonumber(SKIN:GetVariable("ScrollStep", "20")) or 20
     STATE.lyricSize = tonumber(SKIN:GetVariable("lyricSize", "10")) or 10
     STATE.lyricStep = tonumber(SKIN:GetVariable("lyricStep", "1")) or 1
+    STATE.vinylMode = (tonumber(SKIN:GetVariable("VinylMode", "0")) or 0) ~= 0
 
     showPlainMode("No track playing.")
+    applyVinylMode(false)
 end
 
 function Update()
@@ -583,6 +589,14 @@ function Update()
             STATE.activeIndex = idx
             renderSyncedWindow(idx)
         end
+    end
+
+    -- Spinning vinyl record animation while playing
+    if STATE.vinylMode and mState:GetValue() == 1 then
+        STATE.vinylAngle = (STATE.vinylAngle + STATE.vinylStepDeg) % 360
+        SKIN:Bang("!SetOption", "MeterCoverVinyl", "ImageRotate", tostring(STATE.vinylAngle))
+        SKIN:Bang("!UpdateMeter", "MeterCoverVinyl")
+        SKIN:Bang("!Redraw")
     end
 
     return STATE.activeIndex
@@ -668,6 +682,35 @@ function AdjustFontSize(delta)
         SKIN:Bang("!UpdateMeter", "MeterLyrics")
     end
     SKIN:Bang("!Redraw")
+end
+
+applyVinylMode = function(shouldRedraw)
+    if STATE.vinylMode then
+        SKIN:Bang("!HideMeter", "MeterCover")
+        SKIN:Bang("!ShowMeter", "MeterCoverVinylMask")
+        SKIN:Bang("!ShowMeter", "MeterCoverVinyl")
+        SKIN:Bang("!ShowMeter", "MeterVinylRim")
+        SKIN:Bang("!SetOption", "MeterCoverVinyl", "ImageRotate", tostring(STATE.vinylAngle))
+    else
+        STATE.vinylAngle = 0
+        SKIN:Bang("!HideMeter", "MeterCoverVinylMask")
+        SKIN:Bang("!HideMeter", "MeterCoverVinyl")
+        SKIN:Bang("!HideMeter", "MeterVinylRim")
+        SKIN:Bang("!ShowMeter", "MeterCover")
+    end
+    SKIN:Bang("!UpdateMeter", "MeterCover")
+    SKIN:Bang("!UpdateMeter", "MeterCoverVinylMask")
+    SKIN:Bang("!UpdateMeter", "MeterCoverVinyl")
+    SKIN:Bang("!UpdateMeter", "MeterVinylRim")
+    if shouldRedraw then
+        SKIN:Bang("!Redraw")
+    end
+end
+
+function ToggleVinyl()
+    STATE.vinylMode = not STATE.vinylMode
+    SKIN:Bang("!SetVariable", "VinylMode", STATE.vinylMode and "1" or "0")
+    applyVinylMode(true)
 end
 
 -- Expose internals for offline unit testing (harmless in Rainmeter)

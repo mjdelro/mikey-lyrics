@@ -2,7 +2,7 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 
-const USER_AGENT = 'mikey-lyrics-gnome/1.1.0 (https://github.com/mjdelro/mikey-lyrics)';
+const USER_AGENT = 'mikey-lyrics-gnome/1.1.1 (https://github.com/mjdelro/mikey-lyrics)';
 
 /**
  * Parse LRC formatted text into a sorted array of { time, text } objects.

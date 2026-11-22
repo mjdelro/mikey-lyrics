@@ -1,6 +1,7 @@
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import Graphene from 'gi://Graphene';
 import Pango from 'gi://Pango';
 import Soup from 'gi://Soup?version=3.0';
 import St from 'gi://St';
@@ -31,7 +32,12 @@ export default class MikeyLyricsExtension extends Extension {
         this._artCancellable = null;
         this._debounceTimerId = 0;
         this._tickTimerId = 0;
+        this._vinylTimerId = 0;
+        this._vinylAngle = 0;
         this._posSyncCounter = 0;
+        this._artSeq = 0;
+        this._cachedArtPath = null;
+        this._isPlaying = false;
 
         this._lastTrackKey = '';
         this._lastArtUrl = '';
@@ -86,6 +92,8 @@ export default class MikeyLyricsExtension extends Extension {
             GLib.source_remove(this._tickTimerId);
             this._tickTimerId = 0;
         }
+        this._stopVinylSpin();
+        this._cleanupCachedArt();
         if (this._debounceTimerId) {
             GLib.source_remove(this._debounceTimerId);
             this._debounceTimerId = 0;
@@ -262,16 +270,47 @@ export default class MikeyLyricsExtension extends Extension {
 
         const infoRow = new St.BoxLayout({x_expand: true});
 
-        const coverFrame = new St.Bin({
-            style_class: 'mikey-lyrics-cover-frame',
+        const coverWrapper = new St.Bin({
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         });
+
+        this._coverFrame = new St.Widget({
+            style_class: 'mikey-lyrics-cover-frame',
+            layout_manager: new Clutter.BinLayout(),
+            reactive: true,
+            track_hover: true,
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
+        });
+        this._coverFrame.connect('button-press-event', (_actor, event) => {
+            if (event.get_button() !== 1)
+                return Clutter.EVENT_PROPAGATE;
+            const cur = this._settings.get_boolean('vinyl-mode');
+            this._settings.set_boolean('vinyl-mode', !cur);
+            return Clutter.EVENT_STOP;
+        });
+
         this._coverIcon = new St.Icon({
             icon_name: 'audio-x-generic-symbolic',
-            icon_size: 48,
+            icon_size: 44,
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
         });
-        coverFrame.set_child(this._coverIcon);
+        this._vinylSpindle = new St.Widget({
+            style_class: 'mikey-lyrics-vinyl-spindle',
+            x_expand: true,
+            y_expand: true,
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+            visible: false,
+        });
+
+        this._coverFrame.add_child(this._coverIcon);
+        this._coverFrame.add_child(this._vinylSpindle);
+        coverWrapper.set_child(this._coverFrame);
+        const coverFrame = coverWrapper;
 
         const metaCol = makeVBox({
             style_class: 'mikey-lyrics-meta',
@@ -496,6 +535,7 @@ export default class MikeyLyricsExtension extends Extension {
         this._currentLabel.set_style(`font-size: ${fontSize + 3}px;`);
 
         this._updateSyncButtonStyle();
+        this._applyVinylMode();
     }
 
     _applyPosition() {
@@ -576,6 +616,10 @@ export default class MikeyLyricsExtension extends Extension {
         case 'widget-visible':
             if (this._root)
                 this._root.visible = this._settings.get_boolean('widget-visible');
+            this._syncVinylSpinTimer();
+            break;
+        case 'vinyl-mode':
+            this._applyVinylMode();
             break;
         case 'show-panel-indicator':
             this._setupPanelIndicator();
@@ -593,9 +637,11 @@ export default class MikeyLyricsExtension extends Extension {
         this._titleLabel.text = state.title || 'Not Playing';
         this._artistLabel.text = state.artist || '—';
         this._albumLabel.text = state.album || '—';
-        this._playPauseIcon.icon_name = state.status === 'Playing'
+        this._isPlaying = state.status === 'Playing';
+        this._playPauseIcon.icon_name = this._isPlaying
             ? 'media-playback-pause-symbolic'
             : 'media-playback-start-symbolic';
+        this._syncVinylSpinTimer();
 
         this._updateCoverArt(state.artUrl);
         this._updateProgressUI(state);
@@ -726,6 +772,76 @@ export default class MikeyLyricsExtension extends Extension {
         }
     }
 
+    _applyVinylMode() {
+        if (!this._coverFrame)
+            return;
+        const vinyl = this._settings.get_boolean('vinyl-mode');
+        if (vinyl) {
+            this._coverFrame.add_style_class_name('mikey-lyrics-cover-vinyl');
+            this._vinylSpindle.visible = true;
+        } else {
+            this._coverFrame.remove_style_class_name('mikey-lyrics-cover-vinyl');
+            this._vinylSpindle.visible = false;
+            this._stopVinylSpin();
+            this._vinylAngle = 0;
+            this._coverFrame.rotation_angle_z = 0;
+        }
+        this._syncVinylSpinTimer();
+    }
+
+    _syncVinylSpinTimer() {
+        const shouldSpin = Boolean(
+            this._settings?.get_boolean('vinyl-mode') &&
+            this._isPlaying &&
+            this._root?.visible
+        );
+        if (shouldSpin) {
+            if (!this._vinylTimerId) {
+                // ~30 FPS, 1.5 deg/frame => ~8 seconds per full vinyl rotation
+                this._vinylTimerId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 33, () => {
+                    if (!this._coverFrame)
+                        return GLib.SOURCE_REMOVE;
+                    this._vinylAngle = (this._vinylAngle + 1.5) % 360;
+                    this._coverFrame.rotation_angle_z = this._vinylAngle;
+                    return GLib.SOURCE_CONTINUE;
+                });
+            }
+        } else {
+            this._stopVinylSpin();
+        }
+    }
+
+    _stopVinylSpin() {
+        if (this._vinylTimerId) {
+            GLib.source_remove(this._vinylTimerId);
+            this._vinylTimerId = 0;
+        }
+    }
+
+    _cleanupCachedArt() {
+        if (!this._cachedArtPath)
+            return;
+        try {
+            Gio.File.new_for_path(this._cachedArtPath).delete(null);
+        } catch (_e) {
+            // Ignore cleanup errors
+        }
+        this._cachedArtPath = null;
+    }
+
+    _setCoverBackgroundUri(fileUri) {
+        if (!this._coverFrame)
+            return;
+        if (fileUri) {
+            const safeUri = fileUri.replace(/"/g, '%22');
+            this._coverFrame.set_style(`background-image: url("${safeUri}");`);
+            this._coverIcon.visible = false;
+        } else {
+            this._coverFrame.set_style(null);
+            this._coverIcon.visible = true;
+        }
+    }
+
     _updateCoverArt(artUrl) {
         if (artUrl === this._lastArtUrl)
             return;
@@ -736,25 +852,15 @@ export default class MikeyLyricsExtension extends Extension {
             this._artCancellable = null;
         }
 
-        const resetFallback = () => {
-            this._coverIcon.gicon = null;
-            this._coverIcon.icon_name = 'audio-x-generic-symbolic';
-            this._coverIcon.icon_size = 48;
-        };
-
         if (!artUrl) {
-            resetFallback();
+            this._cleanupCachedArt();
+            this._setCoverBackgroundUri(null);
             return;
         }
 
         if (artUrl.startsWith('file://')) {
-            try {
-                const file = Gio.File.new_for_uri(artUrl);
-                this._coverIcon.gicon = new Gio.FileIcon({file});
-                this._coverIcon.icon_size = 92;
-            } catch (_e) {
-                resetFallback();
-            }
+            this._cleanupCachedArt();
+            this._setCoverBackgroundUri(artUrl);
             return;
         }
 
@@ -765,23 +871,36 @@ export default class MikeyLyricsExtension extends Extension {
             this._soupSession.send_and_read_async(message, GLib.PRIORITY_LOW, cancellable, (sess, res) => {
                 try {
                     const bytes = sess.send_and_read_finish(res);
-                    if (cancellable.is_cancelled() || !this._coverIcon)
+                    if (cancellable.is_cancelled() || !this._coverFrame)
                         return;
                     if (message.get_status() === Soup.Status.OK && bytes) {
-                        this._coverIcon.gicon = Gio.BytesIcon.new(bytes);
-                        this._coverIcon.icon_size = 92;
+                        const cacheDir = GLib.build_filenamev([GLib.get_user_cache_dir(), 'mikey-lyrics']);
+                        GLib.mkdir_with_parents(cacheDir, 0o755);
+                        this._artSeq += 1;
+                        const nextPath = GLib.build_filenamev([cacheDir, `cover_${this._artSeq}.img`]);
+                        const nextFile = Gio.File.new_for_path(nextPath);
+                        nextFile.replace_contents(
+                            bytes.get_data(),
+                            null,
+                            false,
+                            Gio.FileCreateFlags.REPLACE_DESTINATION,
+                            null
+                        );
+                        this._cleanupCachedArt();
+                        this._cachedArtPath = nextPath;
+                        this._setCoverBackgroundUri(nextFile.get_uri());
                     } else {
-                        resetFallback();
+                        this._setCoverBackgroundUri(null);
                     }
                 } catch (_e) {
-                    if (!cancellable.is_cancelled() && this._coverIcon)
-                        resetFallback();
+                    if (!cancellable.is_cancelled() && this._coverFrame)
+                        this._setCoverBackgroundUri(null);
                 }
             });
             return;
         }
 
-        resetFallback();
+        this._setCoverBackgroundUri(null);
     }
 
     _onTick() {

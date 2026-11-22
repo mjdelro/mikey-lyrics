@@ -64,5 +64,9 @@
       <default>true</default>
       <summary>Show or hide the desktop widget</summary>
     </key>
+    <key name="vinyl-mode" type="b">
+      <default>false</default>
+      <summary>Display album art as a spinning vinyl record</summary>
+    </key>
   </schema>
 </schemalist>

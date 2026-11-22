@@ -66,6 +66,13 @@ export default class MikeyLyricsPreferences extends ExtensionPreferences {
         settings.bind('widget-visible', visibleRow, 'active', Gio.SettingsBindFlags.DEFAULT);
         layoutGroup.add(visibleRow);
 
+        const vinylRow = new Adw.SwitchRow({
+            title: 'Vinyl Record Mode',
+            subtitle: 'Display album art as a spinning vinyl disc (or click the cover)',
+        });
+        settings.bind('vinyl-mode', vinylRow, 'active', Gio.SettingsBindFlags.DEFAULT);
+        layoutGroup.add(vinylRow);
+
         const lockRow = new Adw.SwitchRow({
             title: 'Lock Position',
             subtitle: 'Prevent accidental dragging on the desktop',
