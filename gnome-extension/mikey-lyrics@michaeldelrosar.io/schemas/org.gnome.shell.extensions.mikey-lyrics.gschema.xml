@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.mikey-lyrics"
+          path="/org/gnome/shell/extensions/mikey-lyrics/">
+    <key name="pos-x" type="i">
+      <default>40</default>
+      <summary>Widget X position</summary>
+    </key>
+    <key name="pos-y" type="i">
+      <default>80</default>
+      <summary>Widget Y position</summary>
+    </key>
+    <key name="widget-width" type="i">
+      <default>400</default>
+      <range min="280" max="700"/>
+      <summary>Widget width in pixels</summary>
+    </key>
+    <key name="lyrics-height" type="i">
+      <default>400</default>
+      <range min="180" max="800"/>
+      <summary>Lyrics area height in pixels</summary>
+    </key>
+    <key name="background-opacity" type="i">
+      <default>200</default>
+      <range min="0" max="255"/>
+      <summary>Background opacity (0-255)</summary>
+    </key>
+    <key name="accent-color" type="s">
+      <default>'#1e824c'</default>
+      <summary>Progress bar accent color (hex)</summary>
+    </key>
+    <key name="font-size" type="i">
+      <default>13</default>
+      <range min="9" max="28"/>
+      <summary>Lyrics base font size in pixels</summary>
+    </key>
+    <key name="sync-enabled" type="b">
+      <default>true</default>
+      <summary>Enable synchronous (time-synced) lyrics</summary>
+    </key>
+    <key name="sync-offset-ms" type="i">
+      <default>0</default>
+      <range min="-5000" max="5000"/>
+      <summary>Sync timing offset in milliseconds</summary>
+    </key>
+    <key name="sync-context-lines" type="i">
+      <default>4</default>
+      <range min="1" max="8"/>
+      <summary>Number of context lines above and below active line</summary>
+    </key>
+    <key name="lock-position" type="b">
+      <default>false</default>
+      <summary>Lock widget position against dragging</summary>
+    </key>
+    <key name="always-on-top" type="b">
+      <default>false</default>
+      <summary>Keep widget above application windows</summary>
+    </key>
+    <key name="show-panel-indicator" type="b">
+      <default>true</default>
+      <summary>Show top-bar toggle icon</summary>
+    </key>
+    <key name="widget-visible" type="b">
+      <default>true</default>
+      <summary>Show or hide the desktop widget</summary>
+    </key>
+  </schema>
+</schemalist>

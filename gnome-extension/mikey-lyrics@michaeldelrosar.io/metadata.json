@@ -1,0 +1,17 @@
+{
+  "uuid": "mikey-lyrics@michaeldelrosar.io",
+  "name": "Mikey Lyrics",
+  "description": "Desktop widget displaying synchronous and plain lyrics from LRCLIB with MPRIS media controls.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.mikey-lyrics",
+  "url": "https://github.com/mjdelro/mikey-lyrics",
+  "version-name": "1.1.0"
+}

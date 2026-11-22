@@ -1,0 +1,126 @@
+/* Mikey Lyrics - GNOME Desktop Widget Stylesheet */
+
+.mikey-lyrics-root {
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    color: rgba(255, 255, 255, 0.95);
+    padding: 0;
+}
+
+.mikey-lyrics-toolbar {
+    padding: 8px 10px 2px 10px;
+}
+
+.mikey-lyrics-icon-btn {
+    padding: 4px 6px;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.mikey-lyrics-icon-btn:hover {
+    color: rgba(255, 255, 255, 1.0);
+    background-color: rgba(255, 255, 255, 0.10);
+}
+
+.mikey-lyrics-icon-btn-active {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mikey-lyrics-area {
+    padding: 6px 16px 10px 16px;
+}
+
+.mikey-lyrics-scroll {
+    padding: 4px 8px;
+}
+
+.mikey-lyrics-plain {
+    color: rgba(255, 255, 255, 0.65);
+    text-align: center;
+}
+
+.mikey-lyrics-synced-box {
+    spacing: 8px;
+}
+
+.mikey-lyrics-prev,
+.mikey-lyrics-next {
+    color: rgba(255, 255, 255, 0.46);
+    text-align: center;
+}
+
+.mikey-lyrics-current {
+    color: rgba(255, 255, 255, 1.0);
+    font-weight: 700;
+    text-align: center;
+}
+
+.mikey-lyrics-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.10);
+    margin: 0 12px;
+}
+
+.mikey-lyrics-player {
+    padding: 12px 14px 14px 14px;
+    spacing: 10px;
+}
+
+.mikey-lyrics-cover-frame {
+    width: 92px;
+    height: 92px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.mikey-lyrics-meta {
+    spacing: 4px;
+    padding-left: 12px;
+}
+
+.mikey-lyrics-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.98);
+}
+
+.mikey-lyrics-subrow {
+    spacing: 6px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 12px;
+}
+
+.mikey-lyrics-controls-row {
+    padding-top: 6px;
+    spacing: 6px;
+}
+
+.mikey-lyrics-media-btn {
+    padding: 5px;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.mikey-lyrics-media-btn:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.mikey-lyrics-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.78);
+    font-feature-settings: "tnum";
+}
+
+.mikey-lyrics-progress-track {
+    height: 8px;
+    border-radius: 4px;
+    background-color: rgba(150, 150, 150, 0.45);
+    overflow: hidden;
+}
+
+.mikey-lyrics-progress-fill {
+    height: 8px;
+    border-radius: 4px;
+}
