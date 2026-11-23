@@ -1,4 +1,19 @@
-# mikey lyrics
+<p align="center">
+  <img src="assets/icon.svg" alt="mikey lyrics Icon" width="104" height="104" />
+</p>
+
+<h1 align="center">mikey lyrics</h1>
+
+<p align="center">Desktop lyrics widget for Rainmeter (Windows) and GNOME Shell (Linux) powered by LRCLIB.</p>
+
+<p align="center">
+  <a href="https://github.com/mjdelro/mikey-lyrics/releases/latest"><img src="https://img.shields.io/github/v/release/mjdelro/mikey-lyrics?style=flat-square&color=8b5cf6" alt="" /></a>
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="" />
+  <img src="https://img.shields.io/badge/Rainmeter%20%7C%20GNOME%20Shell-4a86cf?style=flat-square&logo=gnome&logoColor=white" alt="" />
+  <img src="https://img.shields.io/github/license/mjdelro/mikey-lyrics?style=flat-square&color=64748b" alt="" />
+</p>
+
+---
 
 A desktop lyrics widget for **Rainmeter (Windows)** and **GNOME Shell (Linux)** that displays synchronous (time-synced) and plain lyrics from [LRCLIB](https://github.com/tranxuanthang/lrclib) with media controls.
 
